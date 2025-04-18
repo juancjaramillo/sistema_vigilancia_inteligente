@@ -1,243 +1,170 @@
-# person_detection
+# Sistema de Vigilancia Inteligente
 
-Sistema de **detección** y **seguimiento** de personas en tiempo real, desarrollado en Python con OpenCV y MobileNet‑SSD.
-
----
-
-## 📸 Capturas
-
-
-
-```markdown
-![Detección de personas](docs/images/deteccion.png)
-![Seguimiento de centroides](docs/images/centroides.png)
-```
-
-![Detección de personas](docs/images/deteccion.png)
-![Seguimiento de centroides](docs/images/centroides.png)
+**Detección y seguimiento en tiempo real de personas y vehículos**, con captura automática de matrículas y almacenamiento en MySQL.
 
 ---
 
-## 🗂 Estructura del proyecto
+## 🔍 Descripción
+
+Este proyecto implementa un sistema de visión artificial para:
+
+1. **Detección** de objetos en 6 clases: personas, bicicletas, coches, autobuses, trenes y motocicletas.
+2. **Seguimiento** de centroides para mantener un ID único de cada objeto entre fotogramas.
+3. **Reconocimiento de matrículas** (coches y motos) mediante cascada Haar y EasyOCR.
+4. **Almacenamiento** de matrículas detectadas en una base de datos MySQL.
+
+Es ideal para aplicaciones de vigilancia, control de tráfico y gestión de accesos.
+
+---
+
+## 📁 Estructura del proyecto
 
 ```bash
-person_detection/
-├── docs/
-│   └── images/
-│       ├── deteccion.png       # Pantallazo de detección
-│       └── centroides.png       # Pantallazo de tracking
-├── models/
-│   ├── MobileNetSSD_deploy.prototxt
-│   └── MobileNetSSD_deploy.caffemodel
-├── centroid_tracker.py         # Implementación del tracker
-├── main.py                     # Script principal de detección y control
-├── requirements.txt            # Dependencias
-├── README.md                   # Este archivo
-└── .gitignore                  # Ignora venv/, __pycache__/, etc.
+sistema_vigilancia_inteligente/
+├── .gitignore
+├── README.md
+├── requirements.txt
+├── db_init.sql                # Script MySQL para crear BD y tabla
+├── centroid_tracker.py        # Lógica de tracking por centroides
+├── main.py                    # Núcleo de detección, OCR y guardado
+└── models/
+    ├── MobileNetSSD_deploy.prototxt
+    ├── MobileNetSSD_deploy.caffemodel
+    └── haarcascade_russian_plate_number.xml
 ```
 
 ---
 
-## ⚙️ Instalación
+## 📋 Prerrequisitos
 
-1. Clona este repositorio:
+- Python 3.7 o superior
+- MySQL Server
+- Webcam o cámara USB
+
+---
+
+## ⚙️ Instalación y configuración
+
+1. **Clona el repositorio**:
    ```bash
-   git clone https://github.com/tu-usuario/person_detection.git
-   cd person_detection
+   git clone https://github.com/tu-usuario/sistema_vigilancia_inteligente.git
+   cd sistema_vigilancia_inteligente
    ```
 
-2. Crea y activa un entorno virtual:
+2. **Crea y activa un entorno virtual**:
    ```powershell
    # Windows (PowerShell)
    py -3 -m venv venv
    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
    .\venv\Scripts\Activate.ps1
    ```
-   ```bat
-   :: Windows (CMD)
-   py -3 -m venv venv
-   venv\Scripts\activate.bat
-   ```
    ```bash
-   # Unix / MacOS
+   # Unix/macOS
    python3 -m venv venv
    source venv/bin/activate
    ```
 
-3. Instala las dependencias:
+3. **Instala las dependencias**:
    ```bash
-   pip install --upgrade pip
-   pip install -r requirements.txt
+   python -m pip install --upgrade pip
+   python -m pip install -r requirements.txt
    ```
 
-4. Descarga y coloca los modelos en `models/`:
-   - `MobileNetSSD_deploy.prototxt`
-   - `MobileNetSSD_deploy.caffemodel`
+4. **Crea la base de datos y la tabla**:
+   - Edita `db_init.sql` si necesitas ajustar el nombre de la BD.
+   - Ejecuta:
+     ```bash
+     mysql -u <TU_USUARIO> -p < db_init.sql
+     ```
+   Esto creará la base `vigilancia` y la tabla `plates`.
+
+5. **Descarga los modelos** en `models/` si no están incluidos:
+   - MobileNetSSD_deploy.prototxt
+   - MobileNetSSD_deploy.caffemodel
+   - haarcascade_russian_plate_number.xml
 
 ---
 
 ## ▶️ Uso
 
-Con el entorno activo:
+Con el entorno virtual activo, ejecuta:
+
 ```bash
-python main.py
+python main.py \
+  --host localhost \
+  --user tu_usuario \
+  --password tu_password \
+  --database vigilancia
 ```
-- Se abrirá la ventana de la cámara.
-- Verás rectángulos verdes alrededor de las personas y sus centroides con IDs.
-- En consola se imprimirán las coordenadas normalizadas (función `send_control_command`).
-- Presiona `q` para salir.
+
+- Se abrirá una ventana con el feed de la cámara.
+- Detectará y dibujará recuadros de color distinto para cada clase.
+- Mantendrá un **ID** (“ID #”) sobre cada objeto.
+- Si detecta un coche o moto, extraerá la matrícula y la almacenará en MySQL.
+- Presiona **q** para cerrar la aplicación.
 
 ---
 
-## 📋 Detalles del proyecto
-
-- **Lenguaje**: Python 3.x
-- **Framework**: OpenCV DNN + MobileNet‑SSD
-- **Módulos clave**:
-  - `centroid_tracker.py`: lógica de tracking basada en centroides.
-  - `main.py`: carga del modelo, detección y control.
-- **Dependencias**:
-  - opencv-python
-  - imutils
-  - numpy
-  - scipy
-
----
-
-## 🖥️ Código de Ejemplo
-
-Este es un fragmento del archivo `main.py` que realiza:
-
-- Detección de personas, bicicletas, coches y autobuses con MobileNet-SSD.
-- Tracking de centroides.
-- Lectura de matrículas de coches y motos con EasyOCR.
-- Almacenado de las matrículas en MySQL.
+## 🖥️ Código de ejemplo
 
 ```python
-import cv2
-import numpy as np
-import imutils
+# Fragmento de main.py (detección y guardado de matrículas)
+import cv2, imutils
 import mysql.connector
 import easyocr
 from centroid_tracker import CentroidTracker
 
-# Conexión a la base de datos MySQL
-db = mysql.connector.connect(
-    host="TU_HOST",
-    user="TU_USUARIO",
-    password="TU_PASSWORD",
-    database="vigilancia"
-)
+# Conexión MySQL
+db = mysql.connector.connect(host="localhost", user="root", password="root", database="vigilancia")
 cursor = db.cursor()
 
-# Carga del modelo MobileNet-SSD
-net = cv2.dnn.readNetFromCaffe(
-    "models/MobileNetSSD_deploy.prototxt",
-    "models/MobileNetSSD_deploy.caffemodel"
-)
-CLASSES = ["background","aeroplane","bicycle","bird","boat",
-           "bottle","bus","car","cat","chair","cow","diningtable",
-           "dog","horse","motorbike","person","pottedplant",
-           "sheep","sofa","train","tvmonitor"]
-TARGET = {"car","motorbike"}
+# Carga modelo DNN
+net = cv2.dnn.readNetFromCaffe("models/MobileNetSSD_deploy.prototxt", "models/MobileNetSSD_deploy.caffemodel")
+# Clases e inicializaciones...
 
-# Inicializa tracker, OCR y cascade de placas
-tracker = CentroidTracker()
-reader = easyocr.Reader(['en'], gpu=False)
-plate_cascade = cv2.CascadeClassifier(
-    "models/haarcascade_russian_plate_number.xml"
-)
-
-# Captura de video
-vs = cv2.VideoCapture(0)
-
-while True:
+# Bucle principal
+enabled, vs = True, cv2.VideoCapture(0)
+while enabled:
     ret, frame = vs.read()
-    if not ret:
-        break
-    frame = imutils.resize(frame, width=600)
-    (h, w) = frame.shape[:2]
-
-    # Detección DNN
-    blob = cv2.dnn.blobFromImage(
-        cv2.resize(frame, (300, 300)),
-        0.007843, (300, 300), 127.5
-    )
-    net.setInput(blob)
-    detections = net.forward()
-
-    rects, labels = [], []
-    for i in range(detections.shape[2]):
-        conf = detections[0, 0, i, 2]
-        if conf < 0.5:
-            continue
-        idx = int(detections[0, 0, i, 1])
-        label = CLASSES[idx]
-        if label not in TARGET:
-            continue
-        box = (detections[0, 0, i, 3:7] * [w, h, w, h]).astype("int")
-        (sx, sy, ex, ey) = box
-        rects.append((sx, sy, ex, ey))
-        labels.append(label)
-        cv2.rectangle(
-            frame, (sx, sy), (ex, ey), (0, 0, 255), 2
-        )
-
-    # Seguimiento
-    objects = tracker.update(rects)
-
-    for ((objectID, centroid), label) in zip(objects.items(), labels):
-        cv2.circle(frame, tuple(centroid), 4, (255, 255, 255), -1)
-        cv2.putText(
-            frame, f"ID {objectID}",
-            (centroid[0] - 10, centroid[1] - 10),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2
-        )
-        if label in TARGET:
-            # Lectura de matrícula
-            i = list(objects.keys()).index(objectID)
-            sx, sy, ex, ey = rects[i]
-            roi = frame[sy:ey, sx:ex]
-            plates = plate_cascade.detectMultiScale(roi, 1.1, 10)
-            for (px, py, pw, ph) in plates:
-                plate_img = roi[py:py+ph, px:px+pw]
-                texts = reader.readtext(plate_img, detail=0)
-                if not texts:
-                    continue
-                plate = texts[0].replace(" ", "")
-                cursor.execute(
-                    "INSERT IGNORE INTO plates (object_id, label, plate) VALUES (%s,%s,%s)",
-                    (objectID, label, plate)
-                )
-                db.commit()
-                cv2.rectangle(
-                    frame,
-                    (sx+px, sy+py),
-                    (sx+px+pw, sy+py+ph),
-                    (0, 165, 255), 2
-                )
-                cv2.putText(
-                    frame, plate,
-                    (sx+px, sy+py-10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7,
-                    (0, 165, 255), 2
-                )
-
-    cv2.imshow("Vigilancia", frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-vs.release()
-cv2.destroyAllWindows()
+    # detección, tracking y OCR...
+    # inserción en la tabla plates
 ```
+
+---
+
+## 💾 Base de datos MySQL (`db_init.sql`)
+
+```sql
+CREATE DATABASE IF NOT EXISTS vigilancia
+  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE vigilancia;
+
+CREATE TABLE IF NOT EXISTS plates (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  object_id INT NOT NULL,
+  label VARCHAR(20) NOT NULL,
+  plate VARCHAR(20) NOT NULL,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_plate (object_id, plate)
+) ENGINE=InnoDB;
+```
+
+---
+
+## 🔧 Configuración adicional
+
+- Ajusta **`maxDisappeared`** y **`maxDistance`** en `centroid_tracker.py` para adaptarlo a tu cámara.
+- Modifica la confianza mínima (`0.5`) para detecciones más o menos estrictas.
+
+---
 
 ## 🤝 Contribuciones
 
-¡Las contribuciones son bienvenidas! Abre un _issue_ o un _pull request_ con tus mejoras.
+¡Las contribuciones son bienvenidas! Abre un _issue_ o _pull request_.
 
 ---
 
 ## 📝 Licencia
 
-Este proyecto utiliza la licencia **MIT**. Consulta el archivo `LICENSE` para más detalles.
+MIT License. Consulta `LICENSE` para más detalles.
 
