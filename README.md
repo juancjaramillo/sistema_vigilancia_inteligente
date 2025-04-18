@@ -2,6 +2,12 @@
 
 **Detección y seguimiento en tiempo real de personas y vehículos**, con captura automática de matrículas y almacenamiento en MySQL.
 
+![Detección de personas](docs/images/deteccion.png)
+![Seguimiento de centroides](docs/images/centroides.png)
+![Detección de personas](docs/images/deteccion2.png)
+![Seguimiento de centroides](docs/images/centroides2.png)
+
+
 ---
 
 ## 🔍 Descripción
@@ -47,7 +53,7 @@ sistema_vigilancia_inteligente/
 
 1. **Clona el repositorio**:
    ```bash
-   git clone https://github.com/juancjaramillo/sistema_vigilancia_inteligente.git
+   git clone https://github.com/tu-usuario/sistema_vigilancia_inteligente.git
    cd sistema_vigilancia_inteligente
    ```
 
