@@ -6,7 +6,7 @@ Sistema de **detección** y **seguimiento** de personas en tiempo real, desarrol
 
 ## 📸 Capturas
 
-> Coloca tus capturas de pantalla en `docs/images/` y luego inclúyelas así:
+
 
 ```markdown
 ![Detección de personas](docs/images/deteccion.png)
