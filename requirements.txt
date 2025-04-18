@@ -1,0 +1,7 @@
+opencv-python
+imutils
+numpy
+scipy
+easyocr
+pillow
+mysql-connector-python
